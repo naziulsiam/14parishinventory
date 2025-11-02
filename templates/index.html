@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📦 Stock Management</h2>
+    <a href="{{ url_for('add_item') }}" class="btn btn-outline-success">Add New Item</a>
+</div>
+
+<!-- Flash messages (e.g., "Item deleted") -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- Kitchen Stock -->
+<h3 class="text-primary mt-4">🧑‍🍳 Kitchen Stock</h3>
+{% set kitchen_items = items | selectattr('category', 'equalto', 'kitchen') | list %}
+{% if kitchen_items %}
+<table class="table table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Item</th>
+            <th>Current</th>
+            <th>Min Limit</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in kitchen_items %}
+        <tr class="{{ 'table-danger' if item.current_stock < item.min_stock else '' }}">
+            <td><strong>{{ item.name }}</strong></td>
+            <td>{{ item.current_stock }} {{ item.unit }}</td>
+            <td>{{ item.min_stock }} {{ item.unit }}</td>
+            <td>
+                <a href="{{ url_for('log_transaction', item_id=item.id) }}" class="btn btn-sm btn-primary">Update</a>
+                <a href="{{ url_for('stock_history', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
+                <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+                <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" 
+                      onsubmit="return confirm('⚠️ Delete \"{{ item.name }}\" and all its history? This cannot be undone!');"
+                      style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No kitchen items yet.</p>
+{% endif %}
+
+<!-- Front of House Stock -->
+<h3 class="text-success mt-5">🧑‍💼 Front of House Stock</h3>
+{% set front_items = items | selectattr('category', 'equalto', 'front_house') | list %}
+{% if front_items %}
+<table class="table table-striped">
+    <thead class="table-light">
+        <tr>
+            <th>Item</th>
+            <th>Current</th>
+            <th>Min Limit</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in front_items %}
+        <tr class="{{ 'table-danger' if item.current_stock < item.min_stock else '' }}">
+            <td><strong>{{ item.name }}</strong></td>
+            <td>{{ item.current_stock }} {{ item.unit }}</td>
+            <td>{{ item.min_stock }} {{ item.unit }}</td>
+            <td>
+                <a href="{{ url_for('log_transaction', item_id=item.id) }}" class="btn btn-sm btn-primary">Update</a>
+                <a href="{{ url_for('stock_history', item_id=item.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
+                <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-sm btn-outline-warning">Edit</a>
+                <form method="POST" action="{{ url_for('delete_item', item_id=item.id) }}" 
+                      onsubmit="return confirm('⚠️ Delete \"{{ item.name }}\" and all its history? This cannot be undone!');"
+                      style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No front of house items yet.</p>
+{% endif %}
+
+<div class="alert alert-warning mt-4" role="alert">
+  🚨 <strong>Red rows</strong> = stock below minimum limit!
+</div>
+{% endblock %}

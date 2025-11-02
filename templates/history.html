@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>📊 Stock History: {{ item.name }}</h2>
+<p>Current: <strong>{{ item.current_stock }} {{ item.unit }}</strong></p>
+<a href="{{ url_for('index') }}" class="btn btn-secondary mb-3">← Back to Stock List</a>
+
+<canvas id="stockChart" height="100"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('stockChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ dates | tojson }},
+      datasets: [{
+        label: 'Daily Change ({{ item.unit }})',
+        data: {{ changes | tojson }},
+        backgroundColor: function(context) {
+          const value = context.dataset.data[context.dataIndex];
+          return value >= 0 ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)';
+        },
+        borderColor: function(context) {
+          const value = context.dataset.data[context.dataIndex];
+          return value >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)';
+        },
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const change = context.raw;
+              return change >= 0 
+                ? `+${change} (Restock)` 
+                : `${change} (Used/Waste)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { 
+          title: { display: true, text: 'Date' },
+          grid: { display: false }
+        },
+        y: { 
+          title: { display: true, text: 'Change' },
+          ticks: { stepSize: 1 },
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}

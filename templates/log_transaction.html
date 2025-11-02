@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Update Stock: {{ item.name }}</h2>
+<p>Current: <strong>{{ item.current_stock }} {{ item.unit }}</strong></p>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="amount" class="form-label">
+            Change Amount (use positive for restock, negative for usage)
+        </label>
+        <input type="number" class="form-control" id="amount" name="amount" required>
+    </div>
+    <div class="mb-3">
+        <label for="reason" class="form-label">Reason (e.g., "Delivery", "Used in orders", "Waste")</label>
+        <input type="text" class="form-control" id="reason" name="reason" required>
+    </div>
+    <button type="submit" class="btn btn-success">Update</button>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
