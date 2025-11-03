@@ -19,7 +19,7 @@ def login_required(f):
 
 # === DATABASE INIT ===
 def init_db():
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     c = conn.cursor()
 
     c.execute('''
@@ -78,7 +78,7 @@ def register():
         username = request.form['username'].strip()
         password = request.form['password']
         if username and password:
-            conn = sqlite3.connect('/app/data/stock.db')
+            conn = sqlite3.connect('data/stock.db')
             try:
                 conn.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)',
                              (username, hash_password(password)))
@@ -96,7 +96,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        conn = sqlite3.connect('/app/data/stock.db')
+        conn = sqlite3.connect('data/stock.db')
         conn.row_factory = sqlite3.Row
         user = conn.execute('SELECT * FROM users WHERE username = ? AND password_hash = ?',
                             (username, hash_password(password))).fetchone()
@@ -116,7 +116,7 @@ def logout():
 
 # === MAIN STOCK ROUTES ===
 def get_items():
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     conn.row_factory = sqlite3.Row
     items = conn.execute('SELECT * FROM items ORDER BY category, name').fetchall()
     conn.close()
@@ -137,7 +137,7 @@ def add_item():
         min_stock = int(request.form.get('min_stock', 5))
         category = request.form.get('category', 'kitchen')
         if name and category in ['kitchen', 'front_house']:
-            conn = sqlite3.connect('/app/data/stock.db')
+            conn = sqlite3.connect('data/stock.db')
             try:
                 conn.execute('INSERT INTO items (name, unit, min_stock, category) VALUES (?, ?, ?, ?)',
                              (name, unit, min_stock, category))
@@ -152,7 +152,7 @@ def add_item():
 @app.route('/log/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def log_transaction(item_id):
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -188,7 +188,7 @@ def log_transaction(item_id):
 @app.route('/history/<int:item_id>')
 @login_required
 def stock_history(item_id):
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -216,7 +216,7 @@ def stock_history(item_id):
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_item(item_id):
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -245,7 +245,7 @@ def edit_item(item_id):
 @app.route('/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_item(item_id):
-    conn = sqlite3.connect('/app/data/stock.db')
+    conn = sqlite3.connect('data/stock.db')
     conn.execute('DELETE FROM stock_log WHERE item_id = ?', (item_id,))
     conn.execute('DELETE FROM items WHERE id = ?', (item_id,))
     conn.commit()
