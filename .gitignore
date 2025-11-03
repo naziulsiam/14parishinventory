@@ -1,0 +1,16 @@
+# Database folder (never commit your stock data!)
+data/
+
+# Local config with secrets (like email passwords)
+docker-compose.yml
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# System files
+.DS_Store
+Thumbs.db
