@@ -255,6 +255,6 @@ def delete_item(item_id):
 
 # === RUN APP ===
 if __name__ == '__main__':
-    os.makedirs('/app/data', exist_ok=True)
+    os.makedirs('data', exist_ok=True)
     init_db()
     app.run(host='0.0.0.0', port=5000, debug=False)
