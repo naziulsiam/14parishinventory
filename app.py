@@ -7,7 +7,6 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', '14parish-secret-key-change-in-production')
 
-
 # === DECORATOR: Login Required ===
 def login_required(f):
     @wraps(f)
@@ -17,9 +16,13 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# === DATABASE PATH ===
+DB_PATH = 'data/stock.db'
+
 # === DATABASE INIT ===
 def init_db():
-    conn = sqlite3.connect('data/stock.db')
+    os.makedirs('data', exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     c.execute('''
@@ -78,7 +81,7 @@ def register():
         username = request.form['username'].strip()
         password = request.form['password']
         if username and password:
-            conn = sqlite3.connect('data/stock.db')
+            conn = sqlite3.connect(DB_PATH)
             try:
                 conn.execute('INSERT INTO users (username, password_hash) VALUES (?, ?)',
                              (username, hash_password(password)))
@@ -96,7 +99,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        conn = sqlite3.connect('data/stock.db')
+        conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         user = conn.execute('SELECT * FROM users WHERE username = ? AND password_hash = ?',
                             (username, hash_password(password))).fetchone()
@@ -116,7 +119,7 @@ def logout():
 
 # === MAIN STOCK ROUTES ===
 def get_items():
-    conn = sqlite3.connect('data/stock.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     items = conn.execute('SELECT * FROM items ORDER BY category, name').fetchall()
     conn.close()
@@ -137,7 +140,7 @@ def add_item():
         min_stock = int(request.form.get('min_stock', 5))
         category = request.form.get('category', 'kitchen')
         if name and category in ['kitchen', 'front_house']:
-            conn = sqlite3.connect('data/stock.db')
+            conn = sqlite3.connect(DB_PATH)
             try:
                 conn.execute('INSERT INTO items (name, unit, min_stock, category) VALUES (?, ?, ?, ?)',
                              (name, unit, min_stock, category))
@@ -152,7 +155,7 @@ def add_item():
 @app.route('/log/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def log_transaction(item_id):
-    conn = sqlite3.connect('data/stock.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -165,13 +168,11 @@ def log_transaction(item_id):
             reason = request.form['reason'].strip()
             new_stock = item['current_stock'] + amount
 
-            # Update stock
             conn.execute('UPDATE items SET current_stock = ? WHERE id = ?', (new_stock, item_id))
             conn.execute('INSERT INTO stock_log (item_id, change_amount, reason) VALUES (?, ?, ?)',
                          (item_id, amount, reason))
             conn.commit()
 
-            # Optional: Just print low-stock to console (no email)
             if new_stock < item['min_stock']:
                 print(f"⚠️ LOW STOCK: {item['name']} = {new_stock} (min: {item['min_stock']})")
 
@@ -188,7 +189,7 @@ def log_transaction(item_id):
 @app.route('/history/<int:item_id>')
 @login_required
 def stock_history(item_id):
-    conn = sqlite3.connect('data/stock.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -216,7 +217,7 @@ def stock_history(item_id):
 @app.route('/edit/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def edit_item(item_id):
-    conn = sqlite3.connect('data/stock.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     item = conn.execute('SELECT * FROM items WHERE id = ?', (item_id,)).fetchone()
     if not item:
@@ -245,7 +246,7 @@ def edit_item(item_id):
 @app.route('/delete/<int:item_id>', methods=['POST'])
 @login_required
 def delete_item(item_id):
-    conn = sqlite3.connect('data/stock.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.execute('DELETE FROM stock_log WHERE item_id = ?', (item_id,))
     conn.execute('DELETE FROM items WHERE id = ?', (item_id,))
     conn.commit()
@@ -255,6 +256,6 @@ def delete_item(item_id):
 
 # === RUN APP ===
 if __name__ == '__main__':
-    os.makedirs('data', exist_ok=True)
     init_db()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
